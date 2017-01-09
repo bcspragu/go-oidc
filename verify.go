@@ -24,7 +24,7 @@ type IDTokenVerifier struct {
 //
 // Users interact with this struct using a VerificationOption.
 type verificationConfig struct {
-	issuer string
+	issuers []string
 	// If provided, this value must be in the ID Token audiences.
 	audience string
 	// If not nil, check the expiry of the id token.
@@ -46,7 +46,7 @@ type VerificationOption interface {
 // The returned IDTokenVerifier is tied to the Provider's context and its behavior is
 // undefined once the Provider's context is canceled.
 func (p *Provider) Verifier(options ...VerificationOption) *IDTokenVerifier {
-	config := &verificationConfig{issuer: p.issuer}
+	config := &verificationConfig{issuers: []string{p.issuer}}
 	for _, option := range options {
 		option.updateConfig(config)
 	}
@@ -86,6 +86,14 @@ func contains(sli []string, ele string) bool {
 		}
 	}
 	return false
+}
+
+// AddIssuer adds a valid issuer to the list of issuers to check when verifying
+// a token. Sometimes protocol mismatches will occur, for example
+// https://accounts.google.com vs accounts.google.com, as documented here:
+// https://developers.google.com/identity/sign-in/web/backend-auth
+func (v *IDTokenVerifier) AddIssuer(issuer string) {
+	v.config.issuers = append(v.config.issuers, issuer)
 }
 
 // Verify parses a raw ID Token, verifies it's been signed by the provider, preforms
@@ -134,8 +142,15 @@ func (v *IDTokenVerifier) Verify(ctx context.Context, rawIDToken string) (*IDTok
 	}
 
 	// Check issuer.
-	if t.Issuer != v.config.issuer {
-		return nil, fmt.Errorf("oidc: id token issued by a different provider, expected %q got %q", v.config.issuer, t.Issuer)
+	found := false
+	for _, issuer := range v.config.issuers {
+		if t.Issuer == issuer {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil, fmt.Errorf("oidc: id token issued by a different provider, expected one of %q got %q", v.config.issuers, t.Issuer)
 	}
 
 	// If a client ID has been provided, make sure it's part of the audience.

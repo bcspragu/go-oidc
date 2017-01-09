@@ -21,7 +21,7 @@ func TestVerify(t *testing.T) {
 				Issuer: "https://foo",
 			},
 			config: verificationConfig{
-				issuer: "https://foo",
+				issuers: []string{"https://foo"},
 			},
 			signKey: testKeyRSA_2048_0_Priv,
 			pubKeys: []jose.JSONWebKey{testKeyRSA_2048_0},
@@ -33,7 +33,7 @@ func TestVerify(t *testing.T) {
 				Expiry: jsonTime(time.Now().Add(-time.Hour)),
 			},
 			config: verificationConfig{
-				issuer:      "https://foo",
+				issuers:     []string{"https://foo"},
 				checkExpiry: time.Now,
 			},
 			signKey: testKeyRSA_2048_0_Priv,
@@ -46,7 +46,7 @@ func TestVerify(t *testing.T) {
 				Issuer: "https://foo",
 			},
 			config: verificationConfig{
-				issuer: "https://foo",
+				issuers: []string{"https://foo"},
 			},
 			signKey: testKeyRSA_2048_0_Priv,
 			pubKeys: []jose.JSONWebKey{testKeyRSA_2048_1},
@@ -58,7 +58,31 @@ func TestVerify(t *testing.T) {
 				Issuer: "https://foo",
 			},
 			config: verificationConfig{
-				issuer: "https://bar",
+				issuers: []string{"https://bar"},
+			},
+			signKey: testKeyRSA_2048_0_Priv,
+			pubKeys: []jose.JSONWebKey{testKeyRSA_2048_0},
+			wantErr: true,
+		},
+		{
+			name: "multiple issuers, one valid",
+			idToken: idToken{
+				Issuer: "https://foo",
+			},
+			config: verificationConfig{
+				issuers: []string{"foo", "https://foo"},
+			},
+			signKey: testKeyRSA_2048_0_Priv,
+			pubKeys: []jose.JSONWebKey{testKeyRSA_2048_0},
+			wantErr: false,
+		},
+		{
+			name: "multiple issuers, none valid",
+			idToken: idToken{
+				Issuer: "https://foo",
+			},
+			config: verificationConfig{
+				issuers: []string{"bar", "https://bar"},
 			},
 			signKey: testKeyRSA_2048_0_Priv,
 			pubKeys: []jose.JSONWebKey{testKeyRSA_2048_0},
@@ -79,7 +103,7 @@ func TestVerifyAudience(t *testing.T) {
 				Audience: []string{"client1"},
 			},
 			config: verificationConfig{
-				issuer:   "https://foo",
+				issuers:  []string{"https://foo"},
 				audience: "client1",
 			},
 			signKey: testKeyRSA_2048_0_Priv,
@@ -92,7 +116,7 @@ func TestVerifyAudience(t *testing.T) {
 				Audience: []string{"client2"},
 			},
 			config: verificationConfig{
-				issuer:   "https://foo",
+				issuers:  []string{"https://foo"},
 				audience: "client1",
 			},
 			signKey: testKeyRSA_2048_0_Priv,
@@ -106,7 +130,7 @@ func TestVerifyAudience(t *testing.T) {
 				Audience: []string{"client2", "client1"},
 			},
 			config: verificationConfig{
-				issuer:   "https://foo",
+				issuers:  []string{"https://foo"},
 				audience: "client1",
 			},
 			signKey: testKeyRSA_2048_0_Priv,
@@ -126,7 +150,7 @@ func TestVerifySigningAlg(t *testing.T) {
 				Issuer: "https://foo",
 			},
 			config: verificationConfig{
-				issuer: "https://foo",
+				issuers: []string{"https://foo"},
 			},
 			signKey: testKeyRSA_2048_0_Priv,
 			signAlg: RS256, // By default we only support RS256.
@@ -138,7 +162,7 @@ func TestVerifySigningAlg(t *testing.T) {
 				Issuer: "https://foo",
 			},
 			config: verificationConfig{
-				issuer: "https://foo",
+				issuers: []string{"https://foo"},
 			},
 			signKey: testKeyRSA_2048_0_Priv,
 			signAlg: RS512,
@@ -151,7 +175,7 @@ func TestVerifySigningAlg(t *testing.T) {
 				Issuer: "https://foo",
 			},
 			config: verificationConfig{
-				issuer:       "https://foo",
+				issuers:      []string{"https://foo"},
 				requiredAlgs: []string{ES384},
 			},
 			signAlg: ES384,
@@ -164,7 +188,7 @@ func TestVerifySigningAlg(t *testing.T) {
 				Issuer: "https://foo",
 			},
 			config: verificationConfig{
-				issuer:       "https://foo",
+				issuers:      []string{"https://foo"},
 				requiredAlgs: []string{RS256, ES384},
 			},
 			signAlg: ES384,
@@ -177,7 +201,7 @@ func TestVerifySigningAlg(t *testing.T) {
 				Issuer: "https://foo",
 			},
 			config: verificationConfig{
-				issuer:       "https://foo",
+				issuers:      []string{"https://foo"},
 				requiredAlgs: []string{RS256, ES512},
 			},
 			signAlg: ES384,
